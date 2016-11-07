@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 
 If we analyze the output of the program, we can see after allocating 100k blocks each being of 4096 bytes of size, we got our heap pointer increased. If we stop the execution of the program after the memory allocation using `getchar` or something similar and check the /proc/<pid>/maps file, we will be able to determine the heap location of the program. Things will get interesting, after it de-allocates the memory region, which lies in between 10000 to 40000 range. We can see the heap location did not alter even after freeing the memory. Because free just marked this section as deleted and will be used for future allocations. However, when we are freeing the memory from middle to the end, the free function smartly decrease the end of the heap.
 
-{% highlight Bash %}
+{% highlight bash %}
 Heap location=0x1c82000
 Heap location after memory allocation=0x1a4c1000
 Freeing data in the range 10000-40000
@@ -77,3 +77,10 @@ Heap location after memory free from middle=0x1a4c1000
 Now clearing to the end of heap 
 Heap location after memory free=0x107ed000
 {% endhighlight %}
+
+
+
+Reference
+1. [Book] (www.google.com)
+2. [Link] (https://sploitfun.wordpress.com/2015/02/10/understanding-glibc-malloc/)
+
