@@ -64,7 +64,8 @@ int main(int argc, char **argv)
 	cout <<  "Heap location after memory free=" << sbrk(0) << endl;
 	return 0;
 }
-{% endhighlight }
+
+{% endhighlight %}
 
 If we analyze the output of the program, we can see after allocating 100k blocks each being of 4096 bytes of size, we got our heap pointer increased. If we stop the execution of the program after the memory allocation using `getchar` or something similar and check the /proc/<pid>/maps file, we will be able to determine the heap location of the program. Things will get interesting, after it de-allocates the memory region, which lies in between 10000 to 40000 range. We can see the heap location did not alter even after freeing the memory. Because free just marked this section as deleted and will be used for future allocations. However, when we are freeing the memory from middle to the end, the free function smartly decrease the end of the heap.
 ```
