@@ -6,7 +6,7 @@ target=output
 
 
 cflags=-g -c -std=c++0x -I$(boost_inc) -I.
-lflags=-L$(boost_lib) -lboost_system -lboost_thread
+lflags=
 
 objs= \
 	  malloc_test.o
