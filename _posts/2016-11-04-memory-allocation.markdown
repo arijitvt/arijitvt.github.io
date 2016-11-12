@@ -4,83 +4,195 @@ title:  "Memory Allocation"
 date:   2016-11-04 23:20:37 -0400
 categories: jekyll update
 ---
-Memory allocation/deallocation is one of interesting problem in operating systems. It is one of the fundamental thing that every process needs. Mostly in a standard C program, we use m
-What is interesting here is that while allocation, we are passing the size of the memory but while deallocating, we are just sending the pointer to the memory itself. Then the question naturally comes, that where does the free functions getting the size information. Well, the magic lies in the  memory allocated by malloc itself. In the first place malloc stores the siz	e of the memory it has allocated and free determines the size from that predefined location. This is one of the reason behind **Free the memory by free, if it is allocated by malloc.calloc.** .alloc  group of functions like malloc, calloc, which allocates memory of specified size, where malloc just allocates memory and returns the first location of the memory and calloc initalizes that memory with NULL. A sample program looks like this,
+
+Basics
+-----------
+Memory allocation/deallocation is one of interesting problem in operating systems. It is one of the fundamental thing that every process needs. Mostly in a standard C program, we use malloc/calloc functions (seldom realloc)  for that purpose. The following snippet shows one such typical example. 
 {% highlight c %}
 int main()
 {
 	void *p = malloc(sizeof(int));
-	memset(p,0, sizeof(int));
+	memset(p,0, sizeof(int));	
 	// Memory Allocation is done. The above two lines
 	// can beachieved with a single line by calloc.
 	// We will do a comparison of these two ways of
 	// memory allocation in a separate topic.
 	// Now free the memory
+	/**************
+	* Do the work with the memory
+	**/
+	
 	free(p);
 	return 0;
 }
 {% endhighlight %}
+What is interesting here, is that, while allocation, we are passing the size of the memory but during free, we are just sending the pointer to the memory itself. Then the question naturally comes, that where does the free function getting the size information. Well, the magic lies in the  memory allocated by malloc itself. During memory allocation, malloc stores the size of the block at the beginning of it and returns the pointer the to memory after that location. A typical block allocated  by malloc looks like (a simplified view from malloc.c implementation),
 
-What is interesting here is that while allocation, we are passing the size of the memory but while deallocation, we are just sending the pointer to the memory itself. Then the question naturally comes, that where does the free functions getting the size information. Well, the magic lies in the  memory allocated by malloc itself. In the first place malloc stores the size of the memory it has allocated and free determines the size from that predefined location. This is one of the reason behind **Free the memory by free, if it is allocated by malloc/calloc.** .
+{%highlight bash%}
 
-The system calls that are actually interacting with the kernel is brk/sbrk. The nice thing about free is that if we free  a block of memory, it does not go to operating system directly, rather malloc maintains a list of free memory and mark this block free and append this to the freelist. In future if it gets any request of allocating memory it re-uses this one. The following program  will show that,
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+| Size of previous chunk
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+| Size of chunk
+mem-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+| User data starts here... .
+. .
+. (malloc_usable_size() bytes) .
+. .
+nextchunk-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+| (size of chunk, but used for application data)
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+| Size of next chunk, in bytes
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+
+{%endhighlight%}
+
+Usable Size
+-----------------
+
+Next interesting thing about malloc is that, when we are requesting certain amount of memory from the system, most of them time malloc allocates more memory than that, due to alignment and padding. The following code snippet will show, when we are requesting malloc to allocate 4 bytes of memory and then calling malloc\_usable\_size (which returns the size of the memory,that can be used by prog) returns 24 on 64bit Unix machine. However the actual memory allocated by malloc is more than that. 
 
 {% highlight cpp %}
+#include <iostream>
+#include <unistd.h>
+#include <malloc.h>
+using namespace std;
 
+int main() {
+		void *ch =  malloc(sizeof(int)); 
+		cout  << "Usable size : " << malloc_usable_size(ch) << endl;
+		return 0;
+}
+
+////////////////
+//output
+////////////////
+// Usable size : 24
+
+{% endhighlight %}
+
+The output of a similar prog ( I guess by now you can guess the code for this, so I am not posting it here), could bolster this padding logic even more. 
+
+{%highlight bash%}
+Requsted= 22 Usable= 24
+Requsted= 23 Usable= 24 
+Requsted= 24 Usable= 24 
+.........
+Requsted= 39 Usable= 40
+Requsted= 40 Usable= 40
+Requsted= 41 Usable= 56
+{% endhighlight %}
+
+
+Top of the Heap
+-------------------
+
+Now we are moving towards the final part of the blog, where we will try to show the  movement of the top of the heap with memory allocation and de-allocation. `malloc` internally calls `brk` or `mmap` for memory allocation from the system. As we know, system calls are quite expensive, so malloc put many optimization techniques, to minimize that system calls and re-use already allcoated memory from the system. For sake of simplicity, let's consider that malloc is not using `mmap` system calls(because mmapped regions can not be coalesced into one). 
+
+{% highlight cpp %}
 
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
-#include <sys/types.h>
+#include <cstring>
 #include <unistd.h>
+#include <malloc.h>
+using namespace std; 
 
-using namespace std;
 
-int main(int argc, char **argv)
+int main()
 {
-	cout <<  "Heap location=" << sbrk(0) << endl;
-	int count  =  100000;
-	int blockSize = 4096;
 
+	cout << "Heap location before memory allocation=" 
+		<< sbrk(0) << endl;
+	int count = 1000000; 
 	char *data[count];
-	for(int i = 0 ; i < count ; ++i) {
-			data[i] = (char*) malloc(blockSize);
-			sprintf(data[i],"%d",i);
-	}
-	cout <<  "Heap location after memory allocation=" << sbrk(0) << endl;
+	const int blockSize = 1024; 
 
-	cout << "Freeing data in the range 10000-40000"  << endl;
-	for (int i = 10000; i < 40000; ++i) {
+	for (int  i= 0 ; i < count ; ++i ) {
+		data[i] = (char*) malloc(blockSize);		
+	}
+
+	cout << "Heap location after memory allocation=" 
+		<< sbrk(0) << endl;
+	//Trying to trim right after deletion. 
+	//This is will trim a bit
+    malloc_trim(0);
+	cout << "Heap Location after trim= " 
+		<< sbrk(0) << endl;
+	//Futher call to trim has no effect.
+    malloc_trim(0);
+	cout << "Heap Location after trim= " 
+		<< sbrk(0) << endl;
+
+	//Removing some spaces from the middle. 
+	for(int i = 10000; i < 40000; ++i) {
 		free(data[i]);
 	}
 
-	cout <<  "Heap location after memory free from middle=" << sbrk(0) << endl;
+	cout << 
+		"Heap location after massive free from the middle=" 
+		<< sbrk(0) << endl;
+	//No effect of trimp after freeing memory from the middle. 
+	//Because trim only trims from the top.
+	malloc_trim(0) ; 
+	cout << "Effect of trimp after free from the middle= " 
+		<< sbrk(0) << endl;
 
-	cout << "Now clearing to the end of heap " << endl;
-
-	for(int i = 60000; i  < count ; ++i) {
-			free(data[i]);
+	//Now removing 10 blocks of memory from the top 
+	//and top won't change. 
+	for(int  i = count - 10 ; i< count ; ++i) {
+		free(data[i]);
 	}
-	cout <<  "Heap location after memory free=" << sbrk(0) << endl;
+
+	//No affect can be seen after free
+	cout << "Heap location after removing 10 blocks from the top= " 
+		<< sbrk(0) << endl;
+
+	//However if we can trim now, we can see the result
+	malloc_trim(0);
+	cout << "Heap location after trim= " << sbrk(0) << endl;
+
+
+	//Nnow free a huge block of memory from top. 
+	//This will lower the top
+	for (int i = 40000; i < count -10 ; ++i) {
+		free(data[i]);
+	}
+
+	cout << "Heap location after huge free to the top " << sbrk(0) << endl;
+
+
 	return 0;
+	
 }
 
 {% endhighlight %}
 
-If we analyze the output of the program, we can see after allocating 100k blocks each being of 4096 bytes of size, we got our heap pointer increased. If we stop the execution of the program after the memory allocation using `getchar` or something similar and check the /proc/<pid>/maps file, we will be able to determine the heap location of the program. Things will get interesting, after it de-allocates the memory region, which lies in between 10000 to 40000 range. We can see the heap location did not alter even after freeing the memory. Because free just marked this section as deleted and will be used for future allocations. However, when we are freeing the memory from middle to the end, the free function smartly decrease the end of the heap.
-
 {% highlight bash %}
-Heap location=0x1c82000
-Heap location after memory allocation=0x1a4c1000
-Freeing data in the range 10000-40000
-Heap location after memory free from middle=0x1a4c1000
-Now clearing to the end of heap 
-Heap location after memory free=0x107ed000
+Heap location before memory allocation=0x229d000
+Heap location after memory allocation=0x4028c000
+Heap Location after trim= 0x40270000
+Heap Location after trim= 0x40270000
+Heap location after massive free from the middle=0x40270000
+Effect of trimp after free from the middle= 0x40270000
+Heap location after removing 10 blocks from the top= 0x40270000
+Heap location after trim= 0x4026d000
+Heap location after huge free to the top 0x2ca9000
+
+
 {% endhighlight %}
+
+Let's analyze the output of the program.`sbrk(0)` returns the current location of the heap top(0x229d000). After we allocated 1000000 blocks of memory, where each block is again 1024 bytes, then the heap moves to 0x4028c000. However now it allocates some extra memory on the top, which can be removed by calling `malloc_trim`. This function calls, `sbrk` system call with -ve number, to return the allocated memory to the the system. That's why we see the top gets reduced to 0x40270000. However subsequent call to `malloc_trim` could not reduce it any further, as we have already returned any extra memory that malloc has allocated, to the system already. 
+Then the program deallocates some memory from the middle of the chunk. However this memory, does not get returned to the system, rather malloc recycles that for future memory allocation requests. That's why even after freeing the memory, the top of heap does not reduced. Hence even `malloc_trim` could not make any difference to the top either. 
+Then the prog frees from memory from the top. Surprisingly even then the top did not get lowered itself. 
+We can see that from this, `Heap location after removing 10 blocks from the top= 0x40270000`. But now when called trim, then the expected result come out. 
+Finally when we deallocate huge memory block from the top, malloc automatically frees that memory to the system. 
+`Heap location after huge free to the top 0x2ca9000`.
 
 
 
 Reference
-1. [Book] (www.google.com)
-2. [Link] (https://sploitfun.wordpress.com/2015/02/10/understanding-glibc-malloc/)
+1. [The Linux Programming Interface](http://man7.org/tlpi/)
+2. [Malloc Source Code](https://code.woboq.org/userspace/glibc/malloc/malloc.c.html)
 

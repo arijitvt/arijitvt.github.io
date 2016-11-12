@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <sys/types.h>
 #include <unistd.h>
+#include <malloc.h>
 
 using namespace std;
 
@@ -32,5 +33,7 @@ int main(int argc, char **argv)
 			free(data[i]);
 	}
 	cout <<  "Heap location after memory free=" << sbrk(0) << endl;
+	malloc_trim(0); 
+	cout <<  "Heap location after trim=" << sbrk(0) << endl;
 	return 0;
 }
