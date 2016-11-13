@@ -1,32 +1,31 @@
 ---
 layout: post
-title:  "Memory Allocation"
+title:  "Basics of Malloc Magiq"
 date:   2016-11-04 23:20:37 -0400
 categories: jekyll update
 ---
 
 Basics
 -----------
-Memory allocation/deallocation is one of interesting problem in operating systems. It is one of the fundamental thing that every process needs. Mostly in a standard C program, we use malloc/calloc functions (seldom realloc)  for that purpose. The following snippet shows one such typical example. 
+Memory allocation/deallocation is one of interesting problem in operating system. It is one of the fundamental things that every process needs. Mostly in a standard C program, we use malloc/calloc functions (seldom realloc)  for that purpose. The following snippet shows one such typical example. 
 {% highlight c %}
 int main()
 {
 	void *p = malloc(sizeof(int));
 	memset(p,0, sizeof(int));	
 	// Memory Allocation is done. The above two lines
-	// can beachieved with a single line by calloc.
+	// can be achieved with a single line by calloc.
 	// We will do a comparison of these two ways of
 	// memory allocation in a separate topic.
-	// Now free the memory
 	/**************
 	* Do the work with the memory
 	**/
-	
+	// Now free the memory
 	free(p);
 	return 0;
 }
 {% endhighlight %}
-What is interesting here, is that, while allocation, we are passing the size of the memory but during free, we are just sending the pointer to the memory itself. Then the question naturally comes, that where does the free function getting the size information. Well, the magic lies in the  memory allocated by malloc itself. During memory allocation, malloc stores the size of the block at the beginning of it and returns the pointer the to memory after that location. A typical block allocated  by malloc looks like (a simplified view from malloc.c implementation),
+What is interesting here, is that, while allocation, we are passing the size of the memory but during free, we are just sending the pointer to the memory itself. Then the question naturally comes, that where does the free function getting the size information. Well, the magic lies in the  memory allocated by malloc itself. During memory allocation, malloc stores the size of the block at the beginning of it and returns the pointer to the memory, which points to a location of after the size storing block. A typical block allocated  by malloc looks like (a simplified view from malloc.c implementation),
 
 {%highlight bash%}
 
@@ -34,7 +33,7 @@ What is interesting here, is that, while allocation, we are passing the size of 
 | Size of previous chunk
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 | Size of chunk
-mem-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+mem-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-                                         
 | User data starts here... .
 . .
 . (malloc_usable_size() bytes) .
@@ -45,12 +44,14 @@ nextchunk-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 | Size of next chunk, in bytes
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
-{%endhighlight%}
+{%endhighlight%} 
+
+For malloc caller, the memory would point to the location pointed by _mem->_.
 
 Usable Size
 -----------------
 
-Next interesting thing about malloc is that, when we are requesting certain amount of memory from the system, most of them time malloc allocates more memory than that, due to alignment and padding. The following code snippet will show, when we are requesting malloc to allocate 4 bytes of memory and then calling malloc\_usable\_size (which returns the size of the memory,that can be used by prog) returns 24 on 64bit Unix machine. However the actual memory allocated by malloc is more than that. 
+The second interesting thing about malloc is,  when we are requesting certain amount of memory from the system, most of them time malloc allocates more memory than that, due to alignment and padding. The following code snippet shows, that a call to malloc requesting to allocate 4 bytes of memory leads to a  memory allocation of bigger size, which can be seen in the output of the subsequent call to `malloc_usable_size` (which returns the size of the memory,that can be used by prog), that returns 24 on Linux x86\_64 machine. Though the actual memory allocated by malloc is even more than that. 
 
 {% highlight cpp %}
 #include <iostream>
@@ -59,13 +60,13 @@ Next interesting thing about malloc is that, when we are requesting certain amou
 using namespace std;
 
 int main() {
-		void *ch =  malloc(sizeof(int)); 
-		cout  << "Usable size : " << malloc_usable_size(ch) << endl;
-		return 0;
+	void *ch =  malloc(sizeof(int)); 
+	cout  << "Usable size : " << malloc_usable_size(ch) << endl;
+	return 0;
 }
 
 ////////////////
-//output
+// output
 ////////////////
 // Usable size : 24
 
