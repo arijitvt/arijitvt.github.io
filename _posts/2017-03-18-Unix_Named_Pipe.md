@@ -67,4 +67,41 @@ function reader
 ```
 
 I also wrote another C++ client code, which will open this pipe and write into this with tunable number of threads(tunable coming as a part of the argumnet to program).
+```C
+int threadHandler(int id)
+{
+	string fileName("/tmp/arijit_reader");
+	int rc  = 
+		mknod(fileName.c_str(),S_IFIFO | S_IRUSR | S_IWUSR, 0);
+    fstream fs; 
+	fs.open(fileName.c_str(),fstream::app| fstream::in | fstream::out);
+	if(fs.is_open()){
+		for(int counter = 0;  counter < 10000; ++counter) {
+		    stringstream ss;
+			ss<< "From thread " <<  id << ":" << counter ;
+			fs << ss.str() << endl;
+			ss.flush(); // just to make sure we are flushing the data 
+			//this_thread::sleep_for(chrono::duration<int,milli>(200));
+		}
+		fs.close();
+	} else {
+		cerr << "Unable to open the file" << endl;
+		return -1;
+	}
+	return 0;
+}
+
+int main(int argc, char **argv) 
+{
+	int counter =  atoi(argv[1]);
+	vector<thread> tList; 
+	for (int i = 0 ; i <  counter; ++i ) {
+		tList.push_back(move(thread(threadHandler,i)));
+	}	
+	for_each(tList.begin(), tList.end(), [](thread& t) {t.join();});
+	return 0;
+}
+
+```
+If we gradually increase the number of threads, we will see the gradual increase in the load using htop utility on a terminal. Since each thread is writing 10k times, I assume it is a good load to test with. I was runnin
 
