@@ -1,0 +1,70 @@
+# Unix Named Pipe
+Pipe file system is one of the beatiful feature, which serves mutiple different purpose. The most amazing of them is the IPC. Writing local server(or process), which does time consuming job, can be communicated using unix pipe. So the all the clients(or communicating process) will open up the named pipe, which the server is listening and write into that pipe without waiting for any ack back from the server. On the other hand, the server will gradually read each request one by one from the file and serve the requested job. That way the client process can asychronously do the work, without delegating the job in another thread. 
+
+In the following sections I will try to describe, how we can setup the link between two communicating process using unix named pipes.
+
+## Creating Pipe
+Creating a pipe is fairly simple. From the shell we can use,
+```bash
+mknod  /tmp/arijit_fifo c
+```
+or a little more handy way of doing this , 
+```bash
+mkfifo  /tmp/arijit_fifo 
+```
+From C/C++ program, we can achieve this by,
+```C++
+// S_FIFO  -> This is the fifo file
+// S_IRUSR -> Reading permission
+// S_IWUSR -> Writing Permission.
+// 0       -> Asking to ignore this parameter
+int rc  = mknod(fileName.c_str(),S_IFIFO | S_IRUSR | S_IWUSR, 0);
+```
+
+Now once this pipe creation is done, so we will go forward with reading from the file. Reading from the file completely(or in other words, tailing the file), is just like reading any other file. 
+```bash
+while true
+  do 
+	  read line < $reader_pipe;
+	  echo $line
+  done
+```
+Doing same from the C++
+```C++
+fstream fs; 
+fs.open(fileName.c_str(),fstream::app| fstream::in | fstream::out);
+if(fs.is_open()){
+   fs<< "Writing into pipe" << endl;
+   fs.close();
+ }
+```
+Putting all the things together, I wrote a small server prograim using bash shell script, which is going to read from the pipe and just simple echo them and only on receiving "exit" the proggram exits.  The code is  as below,
+```bash
+#!/bin/bash
+reader_pipe=/tmp/arijit_reader;
+
+function init 
+{
+  if [[ ! -p  $reader_pipe ]]; 
+  then 
+    mkfifo $reader_pipe
+    echo "Pipe created" 
+	fi
+}
+
+function reader 
+{
+	while true
+	do 
+		read line < $reader_pipe;
+		echo $line
+		if [[ $line == "exit" ]];
+		then 
+			break;
+    fi
+  done
+}
+```
+
+I also wrote another C++ client code, which will open this pipe and write into this with tunable number of threads(tunable coming as a part of the argumnet to program).
+
