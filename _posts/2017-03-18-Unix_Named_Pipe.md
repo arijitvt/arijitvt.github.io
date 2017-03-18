@@ -103,5 +103,7 @@ int main(int argc, char **argv)
 }
 
 ```
-If we gradually increase the number of threads, we will see the gradual increase in the load using htop utility on a terminal. Since each thread is writing 10k times, I assume it is a good load to test with. I was runnin
+If we gradually increase the number of threads, we will see the gradual increase in the load using htop utility on a terminal. Since each thread is writing 10k times, I assume it is a good load to test with.
+![img](https://github.com/arijitvt/arijitvt.github.io/blob/master/_posts/general.png)
+I was runnint this program in a laptop, with 8 Gigs of ram , 2.6Ghz I7 prorcessor with 8 HT cores, running ubuntu 14.04. Though this is entire io bound process, but I could see as I was increasing the number of threads, the shell server started consuming more and more CPU and the virtual memory usage by each thread in C++ program increased, keeping the cpu profile fairly constant, that also make sense, since each thread is doing  the same work. The high cpu usage of the server program, is due to managing the buffer the pipe file. I want to do more investigation on this. This is still an open question to me. After I increased the thread count to 1021, one thread was not able to open the pipe. All further increase of the number of threads, that failure increased fairly linearly. I think that is because the limit of the file descriptor handler we can open from a process. 
 
