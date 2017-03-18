@@ -30,7 +30,7 @@ while true
   done
 ```
 Doing same from the C++
-```C++
+```C
 fstream fs; 
 fs.open(fileName.c_str(),fstream::app| fstream::in | fstream::out);
 if(fs.is_open()){
