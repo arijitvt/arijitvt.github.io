@@ -67,7 +67,7 @@ done
 ```
 
 I also wrote another C++ client code, which will open this pipe and write into this with tunable number of threads(tunable coming as a part of the argumnet to program).
-```C
+```C++
 int threadHandler(int id)
 {
 	string fileName("/tmp/arijit_reader");
