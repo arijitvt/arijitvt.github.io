@@ -54,15 +54,15 @@ function init
 
 function reader 
 {
-	while true
-	do 
+while true
+do 
 	read line < $reader_pipe;
 	echo $line
 	if [[ $line == "exit" ]];
 	then 
 		break;
 	fi
-	done
+done
 }
 ```
 
