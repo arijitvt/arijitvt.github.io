@@ -34,4 +34,7 @@ exclude:
   - Gemfile
   - Gemfile.lock
 
+disqus:
+    shortname: arijitvt-github-io
+
 google_analytics: UA-NNNNNNNN-N
