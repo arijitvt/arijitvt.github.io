@@ -1,3 +1,6 @@
 _site
 .o
 output
+.sass-cache/
+Gemfile.lock
+
