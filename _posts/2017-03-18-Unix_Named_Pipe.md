@@ -108,7 +108,13 @@ int main(int argc, char **argv)
 
 If we gradually increase the number of threads, we will see the gradual increase in the load using htop utility on a terminal. Since each thread is writing 10k times, I assume it is a good load to test with.
 ![img](https://arijitvt.github.io/images/general.png)
-I was runnint this program in a laptop, with 8 Gigs of ram , 2.6Ghz I7 prorcessor with 8 HT cores, running ubuntu 14.04. Though this is entire io bound process, but I could see as I was increasing the number of threads, the shell server started consuming more and more CPU and the virtual memory usage by each thread in C++ program increased, keeping the cpu profile fairly constant, that also make sense, since each thread is doing  the same work. The high cpu usage of the server program, is due to managing the buffer the pipe file. I want to do more investigation on this. This is still an open question to me.
+I was runnint this program in a laptop, with 8 Gigs of ram , 2.6Ghz I7 prorcessor with 8 HT cores, running ubuntu 14.04. Though this is entire io bound process, but I could see as I was increasing the number of threads, the shell server started consuming more and more CPU and the virtual memory usage by each thread in C++ program increased, keeping the cpu profile fairly constant, that also make sense, since each thread is doing  the same work. I was wondering what is causing the high cpu usage. The [pipe.c](http://lxr.free-electrons.com/source/fs/pipe.c#L250) source contains the answer. Overall the algorithm looks like
+```C
+lock(pipeMutex)
+read everything from the buffer
+unlock(pipeMutex)
+```
+As the buffer is continuously growing by the enormous write from the writers, the reader is getting super saturated with reading and also this loop is getting executed more and more, which in turn causing more lock-unlock operations and these two are resulting high cpu usage.
 
 After I increased the thread count to 1022, one thread was not able to open the pipe. All further increase of the number of threads, that failure increased fairly linearly. After little bit  of investigation, I checked the limit using `/proc/<pid>/limits` in my ubuntu system and I found the max number of open file descriptor from a process allowed is 1024. With 1022 threads, we are going to open 1022+3 fd, which is exceeding the maximum permitted limit. 
 
