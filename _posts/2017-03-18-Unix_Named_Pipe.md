@@ -49,20 +49,20 @@ function init
   then 
     mkfifo $reader_pipe
     echo "Pipe created" 
-	fi
+  fi
 }
 
 function reader 
 {
 	while true
 	do 
-		read line < $reader_pipe;
-		echo $line
-		if [[ $line == "exit" ]];
-		then 
-			break;
-    fi
-  done
+	read line < $reader_pipe;
+	echo $line
+	if [[ $line == "exit" ]];
+	then 
+		break;
+	fi
+	done
 }
 ```
 
