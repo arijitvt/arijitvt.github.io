@@ -119,3 +119,47 @@ As the buffer is continuously growing by the enormous write from the writers, th
 
 After I increased the thread count to 1022, one thread was not able to open the pipe. All further increase of the number of threads, that failure increased fairly linearly. After little bit  of investigation, I checked the limit using `/proc/<pid>/limits` in my ubuntu system and I found the max number of open file descriptor from a process allowed is 1024. With 1022 threads, we are going to open 1022+3 fd, which is exceeding the maximum permitted limit. 
 
+## A Libevent based program to read from a file asynchronously
+The nice things about this libevent based program is that, it never buffers anything. 
+```C
+#include <string>
+#include <iostream>
+#include <fcntl.h>
+#include <event2/event.h>
+#include <assert.h>
+#include <unistd.h>
+using namespace std; 
+
+
+void fifo_read_cb(evutil_socket_t fd, short event, void *arg)
+{
+	const int buf_len = 1024;
+	char buffer[buf_len] = {0};
+	int rc = read(fd,buffer,buf_len-1);
+	cout << buffer;
+}
+
+
+int main() 
+{
+	int fifo_fd = open("myfifo",O_RDONLY| O_NONBLOCK,0); 
+	if(fifo_fd < 0 ) {
+		cerr << "Unable to open the file" << endl;
+	}
+
+	struct event_base *base= event_base_new();; 
+	assert(base != NULL && "base is null");
+
+	struct event *evfifo = event_new(base, fifo_fd, 
+			EV_READ|EV_PERSIST,fifo_read_cb,NULL);
+
+	event_add(evfifo,NULL); 
+	event_base_dispatch(base);
+	event_base_free(base); 
+	close(fifo_fd);
+	return 0;
+}
+```
+
+
+
