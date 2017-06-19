@@ -23,9 +23,23 @@ Unconformities are stratified rocks and are therefore usually found in sediments
 When older sedimentary bed has been tilted and brought to an untimely cut short by erosion and the younger bed was deposited by erosion surface. 
 
 **Process Evolved in Agular Uncorformity** : 
-1. First substance. Over it deposition occurrs. There after the rock is uplifted and then tilted. In course of time, uplifted part was eroded and then subsided again.  Sea/huge water body covers this subsided region and again deposition occurs on top of the previous rock. This cycle repeats itself in due course of time. 
+First substance. Over it deposition occurrs. There after the rock is uplifted and then tilted. In course of time, uplifted part was eroded and then subsided again.  Sea/huge water body covers this subsided region and again deposition occurs on top of the previous rock. This cycle repeats itself in due course of time. 
 
 
 
 # Grand Canyon is the Grand Example of Grand Geological Angular Unconformity
+
+Tilted sedimentary rock of pre cambrian age, are overlayed by yonger sedimentary rock of phanerozoice age. In **Utah** a lines of sandstone rocks near sea are the unique example of disconformity of rocks.  Chinle formation happen in triasic period. 
+
+**NonConformity** are also unconformities and it separates igneois or mermorphic rock from over lying sedimentary rock.
+
+## Non conformity at the base of grand canyon
+The  dark rock of the bottom are Archian Vishnu Schist and are over lain by protosoic and phenosoic sediment. Wyoming river a narrow valley with steep rocky wall are non conformities. 
+
+
+Unconformity involves three process, 
+1. Uplift.
+2. Erosion.
+3. Subsidence. 
+During growth of continet, as earth history progressed. In Grand canyon 40 major layers are exposed. 
 
