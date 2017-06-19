@@ -43,3 +43,7 @@ Unconformity involves three process,
 3. Subsidence. 
 During growth of continet, as earth history progressed. In Grand canyon 40 major layers are exposed. 
 
+## Bottom most basement rock in Grand Canyon - Visnhnu Basement Schist
+Color:purple. 
+This rock is deposited as volcanic rocks and sediments. Later metamorphososed. Vishnu metamorphic rock is early protarosopic crystalline rock, consists of granitic, pigmatite. aplit intruded by paleoprotasoic rock. 
+
